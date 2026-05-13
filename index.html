@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Future Product Design Mentor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080c14; color: #e8eaf2;
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased; min-height: 100vh;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .grid-overlay {
+      position:fixed; inset:0;
+      background-image: linear-gradient(rgba(0,229,160,.04) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,160,.04) 1px,transparent 1px);
+      background-size:40px 40px; pointer-events:none; z-index:0;
+    }
+    .container { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:0 20px 60px; }
+
+    header { padding:52px 0 36px; text-align:center; }
+    .pill {
+      display:inline-block; background:rgba(0,229,160,.12); border:1px solid rgba(0,229,160,.3);
+      color:#00e5a0; padding:4px 16px; border-radius:20px; font-size:12px;
+      letter-spacing:.08em; text-transform:uppercase; font-weight:600; margin-bottom:20px;
+    }
+    h1 { font-size:clamp(30px,6vw,52px); font-weight:800; line-height:1.1; letter-spacing:-.02em; margin:0 0 10px; color:#f0f4ff; }
+    h1 span { color:#00e5a0; }
+    .subtitle { color:#8892aa; font-size:15px; letter-spacing:.14em; text-transform:uppercase; font-weight:500; margin:0 0 22px; }
+    .reminder {
+      display:inline-block; background:rgba(255,215,64,.08); border:1px solid rgba(255,215,64,.25);
+      color:#ffd740; padding:10px 20px; border-radius:10px; font-size:14px; font-weight:500;
+    }
+
+    nav { display:flex; gap:8px; margin-bottom:32px; flex-wrap:wrap; }
+    .tab {
+      flex:1; min-width:110px; padding:12px 14px;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      border-radius:12px; color:#8892aa; cursor:pointer; font-size:14px; font-weight:600;
+      display:flex; align-items:center; gap:8px; transition:all .2s; font-family:inherit;
+    }
+    .tab.active { background:rgba(0,229,160,.1); border-color:rgba(0,229,160,.35); color:#00e5a0; }
+
+    .section { animation:fadeIn .3s ease; display:none; }
+    .section.active { display:block; }
+    .section-title { font-size:26px; font-weight:800; color:#f0f4ff; margin:0 0 8px; letter-spacing:-.01em; }
+    .section-desc { color:#8892aa; font-size:15px; margin:0 0 24px; line-height:1.6; }
+
+    .card { background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:28px; margin-bottom:24px; }
+    .lbl { display:block; color:#a0abbe; font-size:13px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:12px; }
+    .hint { color:#606878; font-size:12px; margin:-4px 0 10px; line-height:1.5; }
+
+    .theme-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); gap:10px; margin-bottom:22px; }
+    .theme-btn {
+      padding:11px 12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+      border-radius:10px; color:#c0cce0; cursor:pointer; font-size:13px; font-weight:600;
+      transition:all .18s; font-family:inherit; text-align:center;
+    }
+    .theme-btn.active { background:rgba(0,229,160,.12); border-color:rgba(0,229,160,.4); color:#00e5a0; }
+
+    .btn-primary {
+      width:100%; padding:14px; background:linear-gradient(135deg,#00e5a0,#00bcd4);
+      border:none; border-radius:12px; color:#080c14; font-size:15px; font-weight:800;
+      cursor:pointer; letter-spacing:.02em; transition:opacity .2s; font-family:inherit;
+    }
+    .btn-primary:disabled { opacity:.35; cursor:not-allowed; }
+
+    .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .result-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:20px; }
+    .result-card.wide { grid-column:1/-1; }
+    .result-label { display:flex; align-items:center; gap:8px; color:#00e5a0; font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px; }
+    .result-text { color:#c8d4e8; font-size:14px; line-height:1.7; }
+    .q-list { margin:0; padding-left:18px; }
+    .q-list li { color:#c8d4e8; font-size:14px; line-height:1.7; margin-bottom:5px; }
+
+    .prompt-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:22px; }
+    .field { display:flex; flex-direction:column; gap:8px; }
+    input.txt, textarea.txt {
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12);
+      border-radius:10px; padding:12px 14px; color:#e8eaf2; font-size:14px;
+      outline:none; font-family:inherit; transition:border-color .2s;
+    }
+    input.txt:focus, textarea.txt:focus { border-color:rgba(0,229,160,.4); box-shadow:0 0 0 3px rgba(0,229,160,.08); }
+    textarea.txt { resize:vertical; line-height:1.7; }
+    .form-btns { display:flex; gap:8px; flex-wrap:wrap; }
+    .form-btn {
+      padding:8px 14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+      border-radius:8px; color:#8892aa; cursor:pointer; font-size:13px; font-weight:600;
+      transition:all .18s; font-family:inherit;
+    }
+    .form-btn.active { background:rgba(79,195,247,.15); border-color:rgba(79,195,247,.4); color:#4fc3f7; }
+
+    .prompt-output { background:rgba(0,188,212,.06); border:1px solid rgba(0,188,212,.25); border-radius:16px; padding:28px; }
+    .prompt-output-label { color:#4fc3f7; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
+    .prompt-text { color:#e0eaff; font-size:16px; line-height:1.75; font-style:italic; margin:0 0 20px; font-weight:500; }
+    .btn-copy {
+      padding:10px 24px; background:rgba(79,195,247,.15); border:1px solid rgba(79,195,247,.4);
+      border-radius:10px; color:#4fc3f7; cursor:pointer; font-size:13px; font-weight:700;
+      margin-bottom:14px; display:inline-block; font-family:inherit; transition:background .2s;
+    }
+    .btn-copy:hover { background:rgba(79,195,247,.25); }
+    .prompt-hint { color:#606878; font-size:13px; line-height:1.6; }
+
+    .feedback-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .feedback-card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:20px; }
+    .feedback-card.wide { grid-column:1/-1; }
+    .feedback-label { font-size:12px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px; }
+    .feedback-text { color:#c8d4e8; font-size:14px; line-height:1.75; }
+
+    .loading-card { background:rgba(0,229,160,.05); border:1px solid rgba(0,229,160,.15); border-radius:16px; padding:32px; text-align:center; margin-bottom:24px; }
+    .spinner { width:36px; height:36px; border:3px solid rgba(0,229,160,.2); border-top-color:#00e5a0; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
+    .loading-text { color:#8892aa; font-size:14px; }
+    .error-card { background:rgba(255,80,80,.08); border:1px solid rgba(255,80,80,.25); border-radius:12px; padding:20px; color:#ff8a80; font-size:14px; margin-bottom:16px; }
+
+    footer { text-align:center; color:#3a4155; font-size:12px; padding-top:40px; border-top:1px solid rgba(255,255,255,.05); margin-top:40px; line-height:1.8; }
+
+    @media (max-width:600px) {
+      .results-grid,.prompt-grid,.feedback-grid { grid-template-columns:1fr; }
+      .result-card.wide,.feedback-card.wide { grid-column:1; }
+      .tab { font-size:12px; padding:10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="grid-overlay"></div>
+<div class="container">
+
+  <header>
+    <div class="pill">AI-Powered Educational Tool</div>
+    <h1>AI Future Product<br><span>Design Mentor</span></h1>
+    <p class="subtitle">Explore ideas · Generate prompts · Get feedback</p>
+    <div class="reminder">💡 Use AI to explore, then develop your own original design.</div>
+  </header>
+
+  <nav>
+    <button class="tab active" data-tab="research">🔭 01 &nbsp;Research Ideas</button>
+    <button class="tab" data-tab="prompt">🎨 02 &nbsp;Visual Prompt</button>
+    <button class="tab" data-tab="feedback">✏️ 03 &nbsp;Design Feedback</button>
+  </nav>
+
+  <!-- SECTION 1 — RESEARCH -->
+  <div class="section active" id="sec-research">
+    <h2 class="section-title">Research Ideas</h2>
+    <p class="section-desc">Choose a theme to explore a future design opportunity and build your research foundation.</p>
+    <div class="card">
+      <label class="lbl">Select a Theme</label>
+      <div class="theme-grid" id="theme-grid"></div>
+      <button class="btn-primary" id="btn-research" disabled>Generate Research →</button>
+    </div>
+    <div class="loading-card" id="research-loading" style="display:none"><div class="spinner"></div><p class="loading-text">Building your research brief…</p></div>
+    <div class="error-card" id="research-error" style="display:none"></div>
+    <div id="research-results"></div>
+  </div>
+
+  <!-- SECTION 2 — VISUAL PROMPT -->
+  <div class="section" id="sec-prompt">
+    <h2 class="section-title">Visual Prompt Generator</h2>
+    <p class="section-desc">Build a prompt you can use with AI image tools to visualise your concept. Fill in each field, then copy the result.</p>
+    <div class="card">
+      <div class="prompt-grid">
+        <div class="field"><label class="lbl" for="p-product">Small product or object</label><input class="txt" id="p-product" placeholder="e.g. handheld scanner, wristband, desk lamp" /></div>
+        <div class="field"><label class="lbl" for="p-user">Future user / problem</label><input class="txt" id="p-user" placeholder="e.g. a student with anxiety in 2035" /></div>
+        <div class="field"><label class="lbl" for="p-context">Future context or year</label><input class="txt" id="p-context" placeholder="e.g. a classroom in 2035, a smart city" /></div>
+        <div class="field"><label class="lbl" for="p-goal">Goal it helps with</label><input class="txt" id="p-goal" placeholder="e.g. managing focus, reducing waste, navigating safely" /></div>
+        <div class="field">
+          <label class="lbl">Form language</label>
+          <div class="form-btns" id="form-btns">
+            <button class="form-btn active" data-form="simple">simple</button>
+            <button class="form-btn" data-form="ergonomic">ergonomic</button>
+            <button class="form-btn" data-form="modular">modular</button>
+            <button class="form-btn" data-form="rounded">rounded</button>
+            <button class="form-btn" data-form="geometric">geometric</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-prompt">Build My Prompt →</button>
+    </div>
+    <div class="prompt-output" id="prompt-output" style="display:none">
+      <div class="prompt-output-label">Your Image Generation Prompt</div>
+      <p class="prompt-text" id="prompt-text"></p>
+      <button class="btn-copy" id="btn-copy">Copy Prompt</button>
+      <p class="prompt-hint">Paste this into Midjourney, DALL·E, Adobe Firefly, or any AI image tool. Experiment with variations!</p>
+    </div>
+  </div>
+
+  <!-- SECTION 3 — FEEDBACK -->
+  <div class="section" id="sec-feedback">
+    <h2 class="section-title">Design Feedback</h2>
+    <p class="section-desc">Describe your product idea in your own words. The mentor will give structured feedback to help you develop it further.</p>
+    <div class="card">
+      <label class="lbl" for="idea-input">Describe your design idea</label>
+      <p class="hint">Include: what it is, who it's for, what problem it solves, and roughly what it looks like or how it works.</p>
+      <textarea class="txt" id="idea-input" rows="7" placeholder="e.g. My idea is a small wristband for students with anxiety. It monitors heart rate and gently vibrates when it detects stress rising, reminding the user to breathe. It's smooth and oval-shaped, about 3cm wide, with a soft matte surface..."></textarea>
+      <button class="btn-primary" id="btn-feedback" style="margin-top:12px">Get Feedback →</button>
+    </div>
+    <div class="loading-card" id="feedback-loading" style="display:none"><div class="spinner"></div><p class="loading-text">Analysing your design idea…</p></div>
+    <div class="error-card" id="feedback-error" style="display:none"></div>
+    <div id="feedback-results"></div>
+  </div>
+
+  <footer>
+    <p>AI Future Product Design Mentor &nbsp;·&nbsp; For educational use &nbsp;·&nbsp; Year 9–12 Design &amp; Technology</p>
+    <p>Powered by Claude &nbsp;·&nbsp; Developed for classroom use</p>
+  </footer>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const THEMES = ['Wellbeing','Learning','Sustainability','AI & Future Technology','Accessibility','Future Homes','Future Schools','Future Cities']
+
+const THEME_DATA = {
+  'Wellbeing':{ problem:"In 2035, many young people struggle with digital overload and difficulty disconnecting from constant notifications, leading to poor sleep, anxiety, and reduced focus during the day.", targetUser:"A 16–25 year old student or young worker who spends 8+ hours daily on screens and finds it hard to mentally 'switch off'.", inspiration:"Products like Fitbit (health tracking), Calm app (mindfulness), and analogue tools like fidget rings and sand timers.", opportunity:"A small wearable or desk object that uses gentle physical feedback — vibration, light, or temperature — to signal 'rest time' and encourage short mindful breaks." },
+  'Learning':{ problem:"By 2035, self-directed learning is the norm, but students often lack real-time feedback when studying alone — leading to frustration, mistakes going uncorrected, and low motivation.", targetUser:"A Year 9–12 student studying independently at home or in school, who needs support but doesn't always have a teacher nearby.", inspiration:"Anki flashcard app, the Kindle's built-in dictionary, smart pens like Livescribe, and voice assistants like Alexa.", opportunity:"A compact desk tool that scans handwritten notes or flashcards and gives instant spoken or visual feedback to help students check and reinforce learning." },
+  'Sustainability':{ problem:"In 2035, fast fashion and single-use plastics are still major issues. Consumers want to make sustainable choices but find it hard to understand the environmental cost of everyday purchases.", targetUser:"A teenager or young adult who cares about the environment but finds sustainability information confusing, hidden, or inaccessible.", inspiration:"Olio (sharing app), Too Good To Go, eco-labels on packaging, and QR codes on products.", opportunity:"A small handheld device or wearable that scans product barcodes and instantly displays a simple eco-impact score, helping users make faster, greener decisions while shopping." },
+  'AI & Future Technology':{ problem:"As AI tools become part of everyday life by 2035, many people feel uncertain about whether information they receive is real, generated, or trustworthy — causing confusion and distrust.", targetUser:"A young adult aged 14–25 who regularly uses AI tools for study, creative work, or information, but struggles to critically evaluate what AI produces.", inspiration:"Fact-checking tools, browser extensions like NewsGuard, and physical trust signals like product safety marks.", opportunity:"A compact device or browser-connected object that gives a simple physical or visual signal when content has been AI-generated, helping users pause and think critically." },
+  'Accessibility':{ problem:"In 2035, public spaces are still designed primarily for non-disabled users. People with visual or cognitive impairments often find navigation, signage, and interfaces confusing or exclusionary.", targetUser:"A person with a visual impairment, dyslexia, or cognitive difference who navigates public spaces, schools, or workplaces daily.", inspiration:"Braille displays, bone conduction headphones, tactile maps, and smart canes like the WeWALK.", opportunity:"A lightweight wearable or handheld device that uses tactile, audio, or haptic feedback to help users navigate unfamiliar spaces confidently and independently." },
+  'Future Homes':{ problem:"By 2035, many people live in smaller urban spaces and struggle to manage energy use, air quality, and noise pollution in their homes — often without realising these affect their health.", targetUser:"A young professional or family living in a compact flat or shared house, who wants a healthier home environment but has limited budget and space.", inspiration:"Nest thermostat, air quality monitors like Dyson Purifier, and smart plug devices.", opportunity:"A small, ambient home sensor that monitors air quality, temperature, or noise and communicates status through light or texture — without needing a screen or app." },
+  'Future Schools':{ problem:"In 2035, classrooms are more flexible and collaborative, but students often lose track of group tasks, deadlines, and shared responsibilities — leading to disorganisation and unfair workload.", targetUser:"A Year 9–13 student working in small project teams, who needs to coordinate tasks and share progress without relying solely on phones or screens.", inspiration:"Kanban boards, Google Classroom, smart whiteboards, and physical task tokens used in agile working.", opportunity:"A small shared desktop object that team members interact with physically to log progress, flag blockers, or signal when they need help — a low-distraction, tactile collaboration tool." },
+  'Future Cities':{ problem:"By 2035, urban populations are growing rapidly, making it harder for city dwellers to find quiet, green, or restorative spaces — leading to stress, isolation, and reduced mental health.", targetUser:"A city resident aged 16–35 who travels through busy urban environments daily and struggles to find moments of calm, nature, or genuine rest.", inspiration:"Urban microgardens, biophilic design in architecture, personal audio spaces, and pop-up wellness pods.", opportunity:"A portable personal device that creates a small 'restorative microenvironment' — combining scent, sound, or light — that a user can activate during a commute or urban break." }
+}
+
+const SYSTEM_PROMPT = `You are an educational AI mentor supporting secondary school students (Year 9–12) in a design and technology class. Your role is to prompt thinking, ask questions, and give structured, encouraging feedback — NOT to create final answers for students to copy.
+
+Keep language clear, direct, and appropriate for 14–18 year olds. Be constructive and specific. Always end by encouraging the student to develop their own original direction. Never write the student's final design brief or final product description for them.`
+
+// ── API CALL — swap this URL for your own backend endpoint ───────────────────
+// If you deploy a simple proxy server, point ENDPOINT at it.
+// For local development with the included server: 'http://localhost:3001/api/claude'
+// For production: replace with your deployed server URL e.g. 'https://your-app.onrender.com/api/claude'
+const ENDPOINT = '/api/claude'
+
+async function callClaude(userMessage) {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || `Server error ${res.status}. Make sure your backend is running.`)
+  }
+  const data = await res.json()
+  return data.content.map(b => b.text || '').join('')
+}
+
+function parseJSON(text) {
+  const clean = text.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim()
+  return JSON.parse(clean)
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')
+}
+
+function show(el){ el.style.display='' }
+function hide(el){ el.style.display='none' }
+function empty(el){ el.innerHTML='' }
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'))
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'))
+    btn.classList.add('active')
+    document.getElementById('sec-' + btn.dataset.tab).classList.add('active')
+  })
+})
+
+// ── SECTION 1 — RESEARCH ─────────────────────────────────────────────────────
+let selectedTheme = ''
+const themeGrid = document.getElementById('theme-grid')
+THEMES.forEach(theme => {
+  const btn = document.createElement('button')
+  btn.className = 'theme-btn'
+  btn.textContent = theme
+  btn.addEventListener('click', () => {
+    themeGrid.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    selectedTheme = theme
+    document.getElementById('btn-research').disabled = false
+  })
+  themeGrid.appendChild(btn)
+})
+
+document.getElementById('btn-research').addEventListener('click', async () => {
+  if (!selectedTheme) return
+  const loadEl = document.getElementById('research-loading')
+  const errEl  = document.getElementById('research-error')
+  const resEl  = document.getElementById('research-results')
+  show(loadEl); hide(errEl); empty(resEl)
+  try {
+    const d = THEME_DATA[selectedTheme]
+    const raw = await callClaude(`A student has chosen the theme: "${selectedTheme}".
+
+Here is the base research data for this theme:
+- Future problem: ${d.problem}
+- Target user: ${d.targetUser}
+- Existing product inspiration: ${d.inspiration}
+- Design opportunity: ${d.opportunity}
+
+Present this engagingly for a Year 9–12 student, then add 2–3 additional prompting questions to help them think more deeply.
+
+Respond ONLY with valid JSON using these exact keys:
+- problem (string)
+- targetUser (string)
+- inspiration (string)
+- opportunity (string)
+- researchQuestions (array of exactly 5 strings)
+
+No markdown fences, no preamble.`)
+    const out = parseJSON(raw)
+    resEl.innerHTML = `<div class="results-grid">
+      ${[['problem','Future Problem','⚡'],['targetUser','Target User','👤'],['inspiration','Existing Inspiration','🔍'],['opportunity','Design Opportunity','🚀']].map(([key,label,icon])=>`
+      <div class="result-card">
+        <div class="result-label"><span>${icon}</span> ${label}</div>
+        <p class="result-text">${escHtml(out[key]||'')}</p>
+      </div>`).join('')}
+      <div class="result-card wide">
+        <div class="result-label"><span>❓</span> Research Questions to Explore</div>
+        <ol class="q-list">${(out.researchQuestions||[]).map(q=>`<li>${escHtml(q)}</li>`).join('')}</ol>
+      </div>
+    </div>`
+  } catch(e) {
+    errEl.textContent = e.message || 'Something went wrong. Please try again.'
+    show(errEl)
+  }
+  hide(loadEl)
+})
+
+// ── SECTION 2 — VISUAL PROMPT ─────────────────────────────────────────────────
+let selectedForm = 'simple'
+document.getElementById('form-btns').addEventListener('click', e => {
+  const btn = e.target.closest('.form-btn')
+  if (!btn) return
+  document.querySelectorAll('.form-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  selectedForm = btn.dataset.form
+})
+
+document.getElementById('btn-prompt').addEventListener('click', () => {
+  const product = document.getElementById('p-product').value.trim()
+  const user    = document.getElementById('p-user').value.trim()
+  const context = document.getElementById('p-context').value.trim()
+  const goal    = document.getElementById('p-goal').value.trim()
+  if (!product || !user || !context || !goal) { alert('Please fill in all four fields first.'); return }
+  const prompt = `Design a ${product} for ${user} in ${context}. It should help with ${goal}. The form should be ${selectedForm}. It should be suitable for rapid prototyping and 3D printing.`
+  document.getElementById('prompt-text').textContent = prompt
+  show(document.getElementById('prompt-output'))
+})
+
+document.getElementById('btn-copy').addEventListener('click', () => {
+  const text = document.getElementById('prompt-text').textContent
+  const btn  = document.getElementById('btn-copy')
+  const copy = () => { btn.textContent = '✓ Copied!'; setTimeout(() => { btn.textContent = 'Copy Prompt' }, 2000) }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(copy)
+  } else {
+    const ta = document.createElement('textarea')
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); copy()
+  }
+})
+
+// ── SECTION 3 — FEEDBACK ─────────────────────────────────────────────────────
+document.getElementById('btn-feedback').addEventListener('click', async () => {
+  const idea = document.getElementById('idea-input').value.trim()
+  if (!idea) return
+  const loadEl = document.getElementById('feedback-loading')
+  const errEl  = document.getElementById('feedback-error')
+  const resEl  = document.getElementById('feedback-results')
+  show(loadEl); hide(errEl); empty(resEl)
+  try {
+    const raw = await callClaude(`A student has described their product design idea below. Give structured feedback to help them develop it further. Do NOT redesign the product for them or write their brief.
+
+Student's idea: "${idea}"
+
+Respond ONLY with valid JSON using exactly these keys:
+- strengths: 2–3 sentences on what's working
+- userNeed: comment on how well the user need is defined + 1 question
+- originality: comment on how distinctive the concept is + 1 question
+- printFeasibility: comment on 3D printability + specific practical advice
+- simplifyForm: 1–2 practical suggestions to simplify the form for 3D printing
+- improvement: one clear specific suggestion for what to develop next
+
+No markdown fences, no preamble.`)
+    const out = parseJSON(raw)
+    const CARDS = [
+      ['strengths','Strengths','✅','#00e5a0',false],
+      ['userNeed','User Need','👤','#4fc3f7',false],
+      ['originality','Originality','💡','#ffd740',false],
+      ['printFeasibility','3D Print Feasibility','🖨️','#ce93d8',false],
+      ['simplifyForm','How to Simplify the Form','📐','#80cbc4',false],
+      ['improvement','One Improvement Suggestion','🎯','#ff8a65',true],
+    ]
+    resEl.innerHTML = `<div class="feedback-grid">${CARDS.map(([key,label,icon,color,wide])=>`
+      <div class="feedback-card${wide?' wide':''}" style="border-top:3px solid ${color}">
+        <div class="feedback-label" style="color:${color}">${icon} ${label}</div>
+        <p class="feedback-text">${escHtml(out[key]||'')}</p>
+      </div>`).join('')}</div>`
+  } catch(e) {
+    errEl.textContent = e.message || 'Something went wrong. Please try again.'
+    show(errEl)
+  }
+  hide(loadEl)
+})
+</script>
+</body>
+</html>
